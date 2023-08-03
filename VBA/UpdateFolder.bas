@@ -9,7 +9,12 @@ Sub UpdateFolder()
     Dim strSpecifiedFolder As String
     Dim strDestinationFolder As String
     Dim strAddress As String
-    Dim dictAddressToFolder
+    Dim dictAddressToFolder ' Dictionary
+    Dim oNewRule As Outlook.Rule
+    Dim colRuleActions As Outlook.RuleActions
+    Dim oNewMoveRuleAction As Outlook.MoveOrCopyRuleAction
+    Dim oNewFromCondition As Outlook.ToOrFromRuleCondition
+    Dim strTempName As String
     
     ' Define dictAddressToFolder dictionary (Add Dictionary here)
     Set dictAddressToFolder = CreateObject("Scripting.Dictionary")
@@ -29,25 +34,44 @@ Sub UpdateFolder()
             strSpecifiedFolder = oRule.Actions.MoveToFolder.Folder
             If Err.Number <> 0 Then
                 Err.Clear
+                ' Create new rule
+                Set oNewRule = colRules.Create(oRule.Name & " (fixed)", olRuleReceive)
+                Set oNewFromCondition = oNewRule.Conditions.From
                 ' Get recepient email address
                 For Each oRecepient In oRule.Conditions.From.Recipients
                     strAddress = oRecepient.Address
                     ' Specify oMoveTarget using dictAddressToFolder dict
                     strDestinationFolder = dictAddressToFolder.Item(strAddress)
                     Set oMoveTarget = oInbox.Folders(strDestinationFolder)
+                    ' Add recipient to condition
+                    With oNewFromCondition
+                        .Enabled = True
+                        .Recipients.Add (oRecepient.Address)
+                        .Recipients.ResolveAll
+                    End With
                 Next oRecepient
-                    
+                Set oNewMoveRuleAction = oNewRule.Actions.MoveToFolder
+                ' Specify action for new rule
+                With oNewMoveRuleAction
+                    .Enabled = True
+                    .Folder = oMoveTarget
+                End With
+                oNewRule.Actions.Stop.Enabled = True
                 ' Specify the MoveToFolder object
                 Set oMoveAction = oRule.Actions.MoveToFolder
                 With oMoveAction
                     .Enabled = True
                     .Folder = oMoveTarget
                 End With
+                ' Set rule to Enabled
+                oRule.Enabled = True
                 Debug.Print "Modified " & oRule.Name & "..."
+                strTempName = oRule.Name
+                colRules.Remove (oRule.Name)
+                oNewRule.Name = strTempName
             End If
         End If
-        oRule.Enabled = True
     Next oRule
-    
+    ' Save changes to rules
     colRules.Save
 End Sub
