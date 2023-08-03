@@ -13,8 +13,6 @@ Sub UpdateFolder()
     
     ' Define dictAddressToFolder dictionary (Add Dictionary here)
     Set dictAddressToFolder = CreateObject("Scripting.Dictionary")
-    dictAddressToFolder.Add "rmaRicky@plpc.com", "WD"
-    dictAddressToFolder.Add "Cesar.garcia@plpc.com", "PLPC"
     
     ' Set the inbox folder
     Set oInbox = Application.Session.GetDefaultFolder(olFolderInbox)
